@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 	char device_filename[PATH_MAX];
 	memset(device_filename, '\0', PATH_MAX);
 
-	if(argc > 2) {
+	if(argv[optind]) {
 		strncpy(device_filename, argv[optind], PATH_MAX - 1);
 	} else {
 		strncpy(device_filename, DEFAULT_DVD_DEVICE, PATH_MAX - 1);
