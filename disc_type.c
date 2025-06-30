@@ -5,10 +5,31 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <sys/ioctl.h>
-#include <linux/cdrom.h>
 #include <dvdread/dvd_reader.h>
 #include <dvdread/ifo_read.h>
 #include <libbluray/bluray.h>
+
+// Default DVD device
+#if defined (__linux__)
+#include <linux/cdrom.h>
+#define DEFAULT_DVD_DEVICE "/dev/sr0"
+#elif defined (__DragonFly__)
+#define DEFAULT_DVD_DEVICE "/dev/cd0"
+#elif defined (__FreeBSD__)
+#define DEFAULT_DVD_DEVICE "/dev/cd0"
+#elif defined (__NetBSD__)
+#define DEFAULT_DVD_DEVICE "/dev/cd0d"
+#elif defined (__OpenBSD__)
+#define DEFAULT_DVD_DEVICE "/dev/rcd0c"
+#elif defined (__APPLE__) && defined (__MACH__)
+#define DEFAULT_DVD_DEVICE "/dev/disk1"
+#elif defined (__CYGWIN__)
+#define DEFAULT_DVD_DEVICE "D:\\"
+#elif defined(_WIN32)
+#define DEFAULT_DVD_DEVICE "D:\\"
+#else
+#define DEFAULT_DVD_DEVICE "/dev/dvd"
+#endif
 
 void dvd_info_logger_cb(void *p, dvd_logger_level_t dvdread_log_level, const char *msg, va_list dvd_log_va);
 
@@ -26,7 +47,7 @@ int main(int argc, char **argv) {
 	memset(device_filename, '\0', PATH_MAX);
 
 	if(argc == 1)
-		strcpy(device_filename, "/dev/sr0");
+		strcpy(device_filename, DEFAULT_DVD_DEVICE);
 
 	if(argc == 2)
 		strcpy(device_filename, realpath(argv[1], NULL));
@@ -42,7 +63,6 @@ int main(int argc, char **argv) {
 	if(strstr(device_filename, "/dev/")) {
 
 		int cdrom;
-		int drive_status;
 
 		cdrom = open(device_filename, O_RDONLY | O_NONBLOCK);
 		if(cdrom < 0) {
@@ -50,6 +70,9 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
+#if defined (__linux__)
+
+		int drive_status;
 		drive_status = ioctl(cdrom, CDROM_DRIVE_STATUS);
 
 		if(drive_status != CDS_DISC_OK) {
@@ -86,6 +109,8 @@ int main(int argc, char **argv) {
 
 		printf("unknown\n");
 		return 1;
+
+#endif
 
 	}
 
