@@ -4,7 +4,9 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <dvdread/dvd_reader.h>
 #include <dvdread/ifo_read.h>
 #include <libbluray/bluray.h>
@@ -34,39 +36,72 @@
 void dvd_info_logger_cb(void *p, dvd_logger_level_t dvdread_log_level, const char *msg, va_list dvd_log_va);
 
 void dvd_info_logger_cb(void *p, dvd_logger_level_t dvdread_log_level, const char *msg, va_list dvd_log_va) {
-
 	return;
+}
 
+void print_usage();
+
+void print_usage(void) {
+	printf("disc_type [options] [device]\n");
+	printf("  -h     this help output\n");
+	printf("  -z     display debug output\n");
+	printf("\n");
+	printf("Default device is %s\n", DEFAULT_DVD_DEVICE);
 }
 
 int main(int argc, char **argv) {
 
+	int opt;
 	bool debug = false;
+	bool exit_program = false;
+
+	while ((opt = getopt(argc, argv, "hz")) != -1) {
+
+		switch(opt) {
+			case 'z':
+				debug = true;
+				break;
+			case 'h':
+			case '?':
+				print_usage();
+				exit_program = true;
+				break;
+			default:
+				break;
+		}
+
+	}
+
+	if(exit_program)
+		return 0;
 
 	char device_filename[PATH_MAX];
 	memset(device_filename, '\0', PATH_MAX);
 
-	if(argc == 1)
-		strcpy(device_filename, DEFAULT_DVD_DEVICE);
-
-	if(argc == 2)
-		strcpy(device_filename, realpath(argv[1], NULL));
-
-	if(debug)
-		fprintf(stderr, "%s\n", device_filename);
-
 	if(argc > 2) {
-		debug = true;
-		return 0;
+		strncpy(device_filename, argv[optind], PATH_MAX - 1);
+	} else {
+		strncpy(device_filename, DEFAULT_DVD_DEVICE, PATH_MAX - 1);
 	}
 
-	if(strstr(device_filename, "/dev/")) {
+	int retval;
+	struct stat device_stat;
+
+	retval = stat(device_filename, &device_stat);
+	if(retval) {
+		fprintf(stderr, "Could not open device %s\n", device_filename);
+		return 1;
+	}
+
+	strcpy(device_filename, realpath(device_filename, NULL));
+
+	if(S_ISBLK(device_stat.st_mode)) {
 
 		int cdrom;
 
 		cdrom = open(device_filename, O_RDONLY | O_NONBLOCK);
 		if(cdrom < 0) {
-			fprintf(stderr, "error opening %s\n", device_filename);
+			fprintf(stderr, "Could not open block device %s\n", device_filename);
 			return 1;
 		}
 
