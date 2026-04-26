@@ -142,6 +142,18 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 
+		memset(system_command, '\0', PATH_MAX);
+		sprintf(system_command, "udevadm info %s | grep -q ID_CDROM_MEDIA_CD=1", device_filename);
+
+		if(debug)
+			fprintf(stderr, "%s\n", system_command);
+		retval = system(system_command);
+
+		if(retval == 0) {
+			printf("cd\n");
+			return 0;
+		}
+
 		printf("unknown\n");
 		return 1;
 
