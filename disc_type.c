@@ -154,9 +154,6 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 
-		printf("unknown\n");
-		return 1;
-
 #endif
 
 	}
