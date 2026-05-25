@@ -184,19 +184,22 @@ int main(int argc, char **argv) {
 	}
 
 	dvd_reader_t *dvdread_dvd = NULL;
-	dvd_logger_cb dvdread_logger_cb = { dvd_info_logger_cb };
 
 	if(debug)
-		fprintf(stderr, "DVDOpen2(%s)\n", device_filename);
+		fprintf(stderr, "DVDOpen(%s)\n", device_filename);
 
-	dvdread_dvd = DVDOpen2(NULL, &dvdread_logger_cb, device_filename);
+	dvdread_dvd = DVDOpen(device_filename);
 
-	ifo_handle_t *vmg_ifo = NULL;
-	vmg_ifo = ifoOpen(dvdread_dvd, 0);
+	if(dvdread_dvd) {
 
-	if(vmg_ifo) {
-		printf("dvd\n");
-		return 0;
+		ifo_handle_t *vmg_ifo = NULL;
+		vmg_ifo = ifoOpen(dvdread_dvd, 0);
+
+		if(vmg_ifo) {
+			printf("dvd\n");
+			return 0;
+		}
+
 	}
 
 	BLURAY *bd = NULL;
