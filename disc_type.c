@@ -5,7 +5,6 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <dvdread/dvd_reader.h>
 #include <dvdread/ifo_read.h>
@@ -13,6 +12,7 @@
 
 // Default DVD device
 #if defined (__linux__)
+#include <sys/ioctl.h>
 #include <linux/cdrom.h>
 #define DEFAULT_DVD_DEVICE "/dev/sr0"
 #elif defined (__DragonFly__)
@@ -93,13 +93,21 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+#if defined(_WIN32)
+	strcpy(device_filename, _fullpath(NULL, device_filename, PATH_MAX));
+#else
 	strcpy(device_filename, realpath(device_filename, NULL));
+#endif
 
 	if(S_ISBLK(device_stat.st_mode)) {
 
 		int cdrom;
 
+#if defined(_WIN32)
+		cdrom = open(device_filename, O_RDONLY);
+#else
 		cdrom = open(device_filename, O_RDONLY | O_NONBLOCK);
+#endif
 		if(cdrom < 0) {
 			fprintf(stderr, "Could not open block device %s\n", device_filename);
 			return 1;
